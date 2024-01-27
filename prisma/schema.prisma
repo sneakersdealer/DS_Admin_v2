@@ -1,0 +1,294 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Store {
+  id         String      @id @default(uuid())
+  name       String
+  userId     String
+  billboards Billboard[] @relation("StoreToBillboard")
+  products   Product[]   @relation("StoreToProduct")
+  orders     Order[]     @relation("StoreToOrder")
+  Brand      Brand[]     @relation("StoreToBrand")
+  promocode  Promocode[] @relation("StoreToPromocode")
+  createAt   DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Billboard {
+  id          String   @id @default(uuid())
+  storeId     String
+  store       Store    @relation("StoreToBillboard", fields: [storeId], references: [id])
+  label       String
+  description String
+  imageUrl    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId])
+}
+
+model Brand {
+  id          String @id @default(uuid())
+  storeId     String
+  store       Store  @relation("StoreToBrand", fields: [storeId], references: [id])
+  name        String
+  url         String
+  description String @db.Text
+
+  @@index([storeId])
+}
+
+model Size {
+  id        String  @id @default(uuid())
+  value     String
+  price     String
+  inStock   Boolean @default(false)
+  quantity  String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Product {
+  id            String      @id @default(uuid())
+  storeId       String
+  store         Store       @relation("StoreToProduct", fields: [storeId], references: [id])
+  category      String
+  name          String
+  slug          String
+  sku           String
+  brand         String
+  silhouette    String
+  designer      String
+  details       String
+  releaseDate   String
+  upperMaterial String
+  singleGender  String
+  story         String      @db.Text
+  price         Decimal
+  discount      String
+  isFeatured    Boolean     @default(true)
+  isArchived    Boolean     @default(false)
+  sizeUnit      String
+  sizes         Size[]
+  color         String
+  pictureUrl    String
+  images        Image[]
+  orderItems    OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([storeId])
+}
+
+model Image {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
+
+// model UserPromocode {
+//   id              String    @id @default(uuid())
+//   userId          String?
+//   temporaryUserId String?
+//   promocodeId     String
+//   isUsed          Boolean   @default(false)
+//   usedAt          DateTime?
+//   createdAt       DateTime  @default(now())
+//   updatedAt       DateTime  @updatedAt
+
+//   @@index([userId])
+//   @@index([temporaryUserId])
+//   @@index([promocodeId])
+// }
+
+model Promocode {
+  id           String       @id @default(uuid())
+  storeId      String
+  store        Store        @relation("StoreToPromocode", fields: [storeId], references: [id])
+  name         String
+  discount     String
+  discountType DiscountType
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([storeId])
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED_AMOUNT
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  storeId    String
+  store      Store       @relation("StoreToOrder", fields: [storeId], references: [id])
+  orderItems OrderItem[]
+  isPaid     Boolean     @default(false)
+  phone      String      @default("")
+  address    String      @default("")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([storeId])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// model Store {
+//   id          String    @id @default(uuid())
+//   name        String
+//   userId      String
+//   billboards  Billboard[] @relation("StoreToBillboard")
+//   categories  Category[] @relation("StoreToCategory")
+//   sizes       Size[] @relation("StoreToSize")
+//   colors      Color[] @relation("StoreToColor")
+//   products    Product[] @relation("StoreToProduct")
+//   orders      Order[] @relation("StoreToOrder")
+//   createAt    DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+// }
+
+// model Billboard {
+//   id          String    @id @default(uuid())
+//   storeId     String
+//   store       Store @relation("StoreToBillboard", fields: [storeId], references: [id])
+//   label       String
+//   description String
+//   imageUrl    String
+//   categories  Category[]
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+
+//   @@index([storeId])
+// }
+
+// model Category {
+//   id            String    @id @default(uuid())
+//   storeId       String
+//   store         Store @relation("StoreToCategory", fields: [storeId], references: [id])
+//   billboardId   String
+//   billboard     Billboard @relation(fields: [billboardId], references: [id])
+//   products      Product[] @relation("CategoryToProduct")
+//   name          String
+//   createdAt     DateTime @default(now())
+//   updatedAt     DateTime @updatedAt
+
+//   @@index([storeId])
+//   @@index([billboardId])
+// }
+
+// model Size {
+//   id            String @id @default(uuid())
+//   storeId       String
+//   store         Store @relation("StoreToSize", fields: [storeId], references: [id])
+//   name          String
+//   value         String
+//   products      Product[]
+//   createdAt     DateTime @default(now())
+//   updatedAt     DateTime @updatedAt
+
+//   @@index([storeId])
+// }
+
+// model Color {
+//   id            String @id @default(uuid())
+//   storeId       String
+//   store         Store @relation("StoreToColor", fields: [storeId], references: [id])
+//   name          String
+//   value         String
+//   products      Product[]
+//   createdAt     DateTime @default(now())
+//   updatedAt     DateTime @updatedAt
+
+//   @@index([storeId])
+// }
+
+// model Product {
+//   id            String @id @default(uuid())
+//   storeId       String
+//   store         Store @relation("StoreToProduct", fields: [storeId], references: [id])
+//   categoryId    String
+//   category      Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
+//   name          String
+//   price         Decimal
+//   isFeatured    Boolean @default(true)
+//   isArchived    Boolean @default(false)
+//   sizeId        String
+//   size          Size @relation(fields: [sizeId], references: [id])
+//   colorId       String
+//   color         Color @relation(fields: [colorId], references: [id])
+//   images        Image[]
+//   orderItems    OrderItem[]
+//   createdAt     DateTime @default(now())
+//   updatedAt     DateTime @updatedAt
+
+//   @@index([storeId])
+//   @@index([categoryId])
+//   @@index([sizeId])
+//   @@index([colorId])
+// }
+
+// model Image {
+//   id            String @id @default(uuid())
+//   productId     String
+//   product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+//   url           String
+//   createdAt     DateTime @default(now())
+//   updatedAt     DateTime @updatedAt
+
+//   @@index([productId])
+// }
+
+// model Order {
+//   id            String @id @default(uuid())
+//   storeId       String
+//   store         Store @relation("StoreToOrder", fields: [storeId], references: [id])
+//   orderItems    OrderItem[]
+//   isPaid        Boolean @default(false)
+//   phone         String @default("")
+//   address       String @default("")
+//   createdAt     DateTime @default(now())
+//   updatedAt     DateTime @updatedAt
+
+//   @@index([storeId])
+// }
+
+// model OrderItem {
+//   id            String @id @default(uuid())
+//   orderId       String
+//   order         Order @relation(fields: [orderId], references: [id])
+//   productId     String
+//   product       Product @relation(fields: [productId], references: [id])
+
+//   @@index([orderId])
+//   @@index([productId])
+// }
